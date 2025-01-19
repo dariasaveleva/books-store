@@ -1,4 +1,5 @@
 package wit.books_store.models;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.relational.core.mapping.Table;
@@ -10,9 +11,12 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table(name = "CUSTOMERS")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Customer {
-    Long id;
+    Long customer_id;
+    @NotNull
     String name;
     String surname;
+    @NotNull
     String email;
+    @NotNull
     String phone;
 }

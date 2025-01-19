@@ -14,9 +14,9 @@ import java.util.List;
 @Table(name = "ORDERS")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Order {
-    int id;
-    List<Book> books;
-    Customer customer;
+    Long order_id;
+    List<Long> books;
+    Long customerId;
     LocalDate createdDate;
     Double sum;
 }
