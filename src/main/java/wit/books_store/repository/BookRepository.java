@@ -9,6 +9,7 @@ import wit.books_store.exceptions.InternalException;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Book;
 
+import java.sql.Array;
 import java.util.List;
 
 @Repository
@@ -39,6 +40,14 @@ public class BookRepository  {
         } catch (Exception ex) {
             throw new InternalException("an error occurred");
         }
+    }
+
+    public List<Book> findBooksByIds(List<Long> ids) {
+        String sql = "SELECT * FROM books WHERE book_id = ANY (?)";
+        return jdbcTemplate.query(sql, preparedStatement -> {
+            Array sqlArray = preparedStatement.getConnection().createArrayOf("INTEGER", ids.toArray());
+            preparedStatement.setArray(1, sqlArray);
+        }, bookMapper);
     }
 
     public void save(Book book) {
