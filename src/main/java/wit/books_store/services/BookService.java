@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import wit.books_store.models.Book;
 import wit.books_store.repository.BookRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -31,5 +32,9 @@ public class BookService {
     public void create(Book book) {
         repository.save(book);
         log.info("new book was created");
+    }
+
+    public List<Book> findBooksByDate(LocalDate date) {
+        return repository.findBooksByDate(date);
     }
 }

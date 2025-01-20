@@ -12,10 +12,10 @@ import org.springframework.data.relational.core.mapping.Table;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Customer {
     Long customer_id;
-    @NotNull
+    @NotNull(message = "Name cannot be null")
     String name;
     String surname;
-    @NotNull
+    @NotNull(message = "email cannot be null")
     String email;
     @NotNull
     String phone;

@@ -41,6 +41,28 @@ public class CustomerRepository {
         }
     }
 
+    public Customer findByEmail(String email) {
+        String sql = "SELECT * from customers WHERE email = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, customerMapper, email);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        } catch (Exception ex) {
+            throw new InternalException("an error occurred");
+        }
+    }
+
+    public Customer findByPhone(String phone) {
+        String sql = "SELECT * from customers WHERE phone = '?'";
+        try {
+            return jdbcTemplate.queryForObject(sql, customerMapper, phone);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        } catch (Exception ex) {
+            throw new InternalException("an error occurred");
+        }
+    }
+
     public void save(Customer customer) {
         String sql = "INSERT INTO customers (name, surname, email, phone)  VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(sql, customer.getName(), customer.getSurname(), customer.getEmail(), customer.getPhone());
