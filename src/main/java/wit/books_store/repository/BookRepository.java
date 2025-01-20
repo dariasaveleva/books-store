@@ -10,6 +10,7 @@ import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Book;
 
 import java.sql.Array;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -53,5 +54,12 @@ public class BookRepository  {
     public void save(Book book) {
         String sql = "INSERT INTO books (title, author, price, isPresent)  VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(sql, book.getTitle(), book.getAuthor(), book.getPrice(), book.isPresent());
+    }
+
+    public List<Book> findBooksByDate(LocalDate date) {
+        String sql = "SELECT book_id, title, author, price, createdDate, isPresent FROM " +
+                "books b LEFT JOIN orders o ON b.book_id = ANY (o.books) " +
+                "WHERE createdDate = ?";
+        return jdbcTemplate.query(sql, bookMapper, date);
     }
 }

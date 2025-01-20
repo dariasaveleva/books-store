@@ -9,10 +9,7 @@ import wit.books_store.exceptions.InternalException;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Order;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,11 +36,11 @@ public class OrderRepository {
     }
 
     public void save(Order order) {
-        String sql = "INSERT INTO Orders (customer_id, books, createddate, sum)  VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO orders (customer_id, books, createddate, sum)  VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(connection -> {
             PreparedStatement stat = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             stat.setLong(1, order.getCustomerId());
-            stat.setString(2, String.join(",", order.getBooks().toString()));
+            stat.setArray(2, connection.createArrayOf("BIGINT", order.getBooks().toArray()));
             stat.setDate(3, java.sql.Date.valueOf(order.getCreatedDate()));
             stat.setDouble(4, order.getSum());
             return stat;

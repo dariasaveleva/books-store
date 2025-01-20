@@ -37,7 +37,7 @@ public class CustomerController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public String createBook(@RequestBody Customer customer) {
+    public String createCustomer(@RequestBody Customer customer) {
         customerService.create(customer);
         return "the customer was created";
     }
