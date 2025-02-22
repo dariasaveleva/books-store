@@ -1,20 +1,23 @@
 package wit.books_store.repository;
 
 import lombok.AllArgsConstructor;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
-import wit.books_store.exceptions.InternalException;
-import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Customer;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Repository
 @AllArgsConstructor
 public class CustomerRepository {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private final RowMapper<Customer> customerMapper = (rs, rowNum) ->
             new Customer(
@@ -25,47 +28,37 @@ public class CustomerRepository {
                     rs.getString("phone")
             );
 
-    public List<Customer> findAll() {
-        String sql = "SELECT * from customers";
-        return jdbcTemplate.query(sql, customerMapper);
+    public List<Customer> findAll(Pageable pageable) {
+        String sql = "SELECT * from customers LIMIT :limit OFFSET :offset";
+        return jdbcTemplate.query(sql, Map.of("limit", pageable.getPageSize(), "offset", pageable.getOffset()),
+                customerMapper);
     }
 
-    public Customer findById(Long id) {
-        String sql = "SELECT * from customers WHERE customer_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, customerMapper, id);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new NotFoundException("customer does not exist");
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
+    public Optional<Customer> findById(long id) {
+        String sql = "SELECT * from customers WHERE customer_id = :id";
+        Map<String, Long> source = new HashMap<>();
+        source.put("id", id);
+        return jdbcTemplate.query(sql, source, customerMapper).stream().findFirst();
+
     }
 
-    public Customer findByEmail(String email) {
-        String sql = "SELECT * from customers WHERE email = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, customerMapper, email);
-        } catch (EmptyResultDataAccessException ex) {
-            return null;
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
-    }
-
-    public Customer findByPhone(String phone) {
-        String sql = "SELECT * from customers WHERE phone = '?'";
-        try {
-            return jdbcTemplate.queryForObject(sql, customerMapper, phone);
-        } catch (EmptyResultDataAccessException ex) {
-            return null;
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
+    public Optional<Customer> findByEmailOrPhone(String email, String phone) {
+        String sql = "SELECT * from customers WHERE email = :email OR phone = :phone";
+        Map<String, String> source = new HashMap<>();
+        source.put("email", email);
+        source.put("phone", phone);
+        return jdbcTemplate.query(sql, source, customerMapper).stream().findFirst();
     }
 
     public void save(Customer customer) {
-        String sql = "INSERT INTO customers (name, surname, email, phone)  VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, customer.getName(), customer.getSurname(), customer.getEmail(), customer.getPhone());
+        String sql = "INSERT INTO customers (name, surname, email, phone)  VALUES (:name, :surname, :email, :phone)";
+        SqlParameterSource source = new MapSqlParameterSource()
+                .addValue("name", customer.getName())
+                .addValue("surname", customer.getSurname())
+                .addValue("email", customer.getEmail())
+                .addValue("phone", customer.getPhone());
+
+        jdbcTemplate.update(sql, source);
     }
 
 }

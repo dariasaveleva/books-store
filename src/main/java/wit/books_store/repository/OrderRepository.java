@@ -1,77 +1,79 @@
 package wit.books_store.repository;
 
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import wit.books_store.exceptions.InternalException;
-import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Order;
 
 import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.OffsetDateTime;
+import java.util.*;
 
 @Repository
 @AllArgsConstructor
 public class OrderRepository {
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    public List<Order> findAll() {
-        String sql = "SELECT * from orders";
-        return jdbcTemplate.query(sql, this::makeOrder);
+    public List<Order> findAll(Pageable pageable) {
+        String sql = "SELECT * from orders LIMIT :limit OFFSET :offset";
+        return jdbcTemplate.query(sql, Map.of("limit", pageable.getPageSize(), "offset", pageable.getOffset()), this::makeOrder);
     }
 
-    public Order findById(Long id) {
-        String sql = "SELECT * from orders WHERE order_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, this::makeOrder, id);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new NotFoundException("order does not exist");
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
+    public Optional<Order> findById(long id) {
+        String sql = "SELECT * from orders WHERE order_id = :id";
+        Map<String, Long> source = new HashMap<>();
+        source.put("id", id);
+        return jdbcTemplate.query(sql, source, this::makeOrder).stream().findFirst();
     }
 
     public void save(Order order) {
-        String sql = "INSERT INTO orders (customer_id, books, createddate, sum)  VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(connection -> {
-            PreparedStatement stat = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stat.setLong(1, order.getCustomerId());
-            stat.setArray(2, connection.createArrayOf("BIGINT", order.getBooks().toArray()));
-            stat.setDate(3, java.sql.Date.valueOf(order.getCreatedDate()));
-            stat.setDouble(4, order.getSum());
-            return stat;
-        });
+        String sql = "INSERT INTO orders (customer_id, createdDate, sum) VALUES (:customerId, :createdDate, :sum)";
+        SqlParameterSource map = new MapSqlParameterSource()
+        .addValue("customerId", order.getCustomerId())
+        .addValue("createdDate", order.getCreatedDate())
+        .addValue("sum", order.getSum());
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        jdbcTemplate.update(sql, map, keyHolder, new String[] {"order_id"});
+        order.setOrder_id(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        saveBooksForOrder(order);
     }
 
-    public List<Order> getOrdersByCustomer(Long id) {
-        String sql = "SELECT * FROM orders WHERE customer_id = ?";
-        try {
-            return jdbcTemplate.query(sql, this::makeOrder, id);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new NotFoundException("customer made no orders");
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
+    public List<Order> getOrdersByCustomer(long id) {
+        String sql = "SELECT * FROM orders WHERE customer_id = :id";
+        return jdbcTemplate.query(sql, Map.of("id", id), this::makeOrder);
     }
 
     private Order makeOrder(ResultSet rs, int rowNum) throws SQLException {
-            Order order = new Order();
-            order.setOrder_id(rs.getLong("order_id"));
-            order.setCreatedDate(rs.getDate("createdDate").toLocalDate());
-            order.setCustomerId(rs.getLong("customer_id"));
-            order.setSum(rs.getDouble("sum"));
+        List<Long> books = getBooks(rs.getLong("order_id"));
 
-            String books = rs.getString("books");
-            if (StringUtils.isNotBlank(books)) {
-                String[] booksIds = books.split(",");
-                order.setBooks(Arrays.stream(booksIds)
-                        .map(id -> (long) booksIds.length)
-                        .collect(Collectors.toList()));
-            }
-            return order;
+        return Order.builder()
+                .order_id(rs.getLong("order_id"))
+                .books(books)
+                .createdDate(rs.getObject("createdDate", OffsetDateTime.class))
+                .customerId(rs.getLong("customer_id"))
+                .sum(rs.getDouble("sum"))
+                .build();
+    }
+
+    private List<Long> getBooks(Long orderId) {
+        String sql = "SELECT book_id FROM order_books " +
+                "where order_id = :orderId";
+
+        return jdbcTemplate.queryForList(sql, Map.of("orderId", orderId), Long.class);
+    }
+
+    private void saveBooksForOrder(Order order) {
+        String sql = "INSERT into order_books (order_id, book_id) VALUES (:orderId, :bookId)";
+        for (Long bookId : order.getBooks()) {
+            jdbcTemplate.update(sql, Map.of("orderId", order.getOrder_id(), "bookId", bookId));
         }
     }
+
+}
