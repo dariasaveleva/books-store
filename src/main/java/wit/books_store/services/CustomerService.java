@@ -58,7 +58,7 @@ public class CustomerService {
         }
     }
 
-    private boolean checkIfCustomerNew(String email, String phone) {
+    public boolean checkIfCustomerNew(String email, String phone) {
         return getByEmailOrPhone(email, phone) == null;
     }
 

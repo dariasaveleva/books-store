@@ -30,7 +30,8 @@ public class BookService {
         return Mapper.toBookDto(book);
     }
 
-    public void create(Book book) {
+    public void create(BookDto bookDto) {
+        Book book = Mapper.toBook(bookDto);
         repository.save(book);
         log.info("new book was created");
     }
