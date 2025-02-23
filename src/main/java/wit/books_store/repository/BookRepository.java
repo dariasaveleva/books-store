@@ -1,22 +1,22 @@
 package wit.books_store.repository;
 
 import lombok.AllArgsConstructor;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
-import wit.books_store.exceptions.InternalException;
-import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Book;
+import org.springframework.data.domain.Pageable;
 
-import java.sql.Array;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Repository
 @AllArgsConstructor
-public class BookRepository  {
-    private final JdbcTemplate jdbcTemplate;
+public class BookRepository {
+    private final NamedParameterJdbcTemplate namedJdbcTemplate;
 
     private final RowMapper<Book> bookMapper = (rs, rowNum) ->
          new Book(
@@ -27,39 +27,38 @@ public class BookRepository  {
                 rs.getBoolean("isPresent")
         );
 
-    public List<Book> findAll() {
-        String sql = "SELECT * from books";
-        return jdbcTemplate.query(sql, bookMapper);
+    public List<Book> findAll(Pageable pageable) {
+        String sql = "SELECT * from books LIMIT :limit OFFSET :offset";
+        MapSqlParameterSource parameters = new MapSqlParameterSource()
+                .addValue("limit", pageable.getPageSize())
+                .addValue("offset", pageable.getOffset());
+
+        return namedJdbcTemplate.query(sql, parameters, bookMapper);
     }
 
-    public Book findById(Long id) {
-        String sql = "SELECT * from books WHERE book_id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, bookMapper, id);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new NotFoundException("book was not found");
-        } catch (Exception ex) {
-            throw new InternalException("an error occurred");
-        }
+    public Optional<Book> findById(long id) {
+        String sql = "SELECT * from books WHERE book_id = :id";
+        return namedJdbcTemplate.query(sql, Map.of("id", id), bookMapper).stream().findFirst();
     }
 
     public List<Book> findBooksByIds(List<Long> ids) {
-        String sql = "SELECT * FROM books WHERE book_id = ANY (?)";
-        return jdbcTemplate.query(sql, preparedStatement -> {
-            Array sqlArray = preparedStatement.getConnection().createArrayOf("INTEGER", ids.toArray());
-            preparedStatement.setArray(1, sqlArray);
-        }, bookMapper);
+        String sql = "SELECT * FROM books WHERE book_id = ANY (:ids)";
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("ids", ids.toArray(new Long[0]), java.sql.Types.ARRAY);
+        return namedJdbcTemplate.query(sql, parameters, bookMapper);
     }
 
     public void save(Book book) {
-        String sql = "INSERT INTO books (title, author, price, isPresent)  VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, book.getTitle(), book.getAuthor(), book.getPrice(), book.isPresent());
+        String sql = "INSERT INTO books (title, author, price, isPresent)  VALUES (:title, :author, :price, :isPresent)";
+        namedJdbcTemplate.update(sql,
+                Map.of("title", book.getTitle(), "author", book.getAuthor(),
+                        "price", book.getPrice(), "isPresent", book.isPresent()));
     }
 
-    public List<Book> findBooksByDate(LocalDate date) {
+    public List<Book> findBooksByDate(OffsetDateTime startOfDay, OffsetDateTime endOfDay) {
         String sql = "SELECT book_id, title, author, price, createdDate, isPresent FROM " +
                 "books b LEFT JOIN orders o ON b.book_id = ANY (o.books) " +
-                "WHERE createdDate = ?";
-        return jdbcTemplate.query(sql, bookMapper, date);
+                "WHERE createdDate >= :startOfDay AND createdDate <= :endOfDay";
+        return namedJdbcTemplate.query(sql, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay), bookMapper);
     }
 }

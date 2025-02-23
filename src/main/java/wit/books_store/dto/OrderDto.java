@@ -1,22 +1,22 @@
-package wit.books_store.models;
+package wit.books_store.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "ORDERS")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Order {
+public class OrderDto {
     long order_id;
+    @NotNull(message = "order cannot be created without books")
     List<Long> books;
+    @NotNull(message = "customerId cannot be empty")
     long customerId;
     OffsetDateTime createdDate;
     Double sum;
