@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import wit.books_store.Mapper;
 import wit.books_store.dto.OrderDto;
 import wit.books_store.exceptions.NotFoundException;
+import wit.books_store.exceptions.ValidationException;
 import wit.books_store.models.Book;
 import wit.books_store.models.Order;
 import wit.books_store.repository.BookRepository;
@@ -42,11 +43,11 @@ public class OrderService {
             repository.save(Mapper.toOrder(orderDto));
             log.info("new order was created");
         } else {
-            throw new NotFoundException("cannot create order with invalid data: customer or books don't exist");
+            throw new ValidationException("cannot create order with invalid data: customer or books don't exist");
         }
     }
 
-    private double countSum(List<Long> booksIds) {
+    public double countSum(List<Long> booksIds) {
         List<Book> books = bookRepository.findBooksByIds(booksIds);
         return books.stream()
                 .mapToDouble(Book::getPrice)

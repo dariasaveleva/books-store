@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import wit.books_store.Mapper;
 import wit.books_store.dto.BookDto;
 import wit.books_store.services.BookService;
 
@@ -39,7 +38,7 @@ public class BookController {
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
     public String createBook(@Valid @RequestBody BookDto bookDto) {
-        bookService.create(Mapper.toBook(bookDto));
+        bookService.create(bookDto);
         return "the book was added";
     }
 

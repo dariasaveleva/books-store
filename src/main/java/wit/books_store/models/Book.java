@@ -9,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @AllArgsConstructor
 @Table(name = "BOOKS")
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@EqualsAndHashCode
 public class Book {
     long book_id;
     String title;

@@ -34,7 +34,7 @@ public class Mapper {
                 customerDto.getCustomer_id(),
                 customerDto.getName(),
                 customerDto.getSurname(),
-                customerDto.getPhone(),
+                customerDto.getEmail(),
                 customerDto.getPhone()
         );
     }
@@ -44,7 +44,7 @@ public class Mapper {
                 customer.getCustomer_id(),
                 customer.getName(),
                 customer.getSurname(),
-                customer.getPhone(),
+                customer.getEmail(),
                 customer.getPhone()
         );
     }
