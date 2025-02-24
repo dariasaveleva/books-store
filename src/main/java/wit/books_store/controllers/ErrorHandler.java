@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import wit.books_store.exceptions.DuplicationException;
+import wit.books_store.exceptions.KafkaProcessingException;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.exceptions.ValidationException;
 
@@ -39,5 +40,11 @@ public class ErrorHandler {
       ex.getBindingResult().getFieldErrors().forEach(error ->
               map.put(error.getField(), error.getDefaultMessage()));
       return map;
+    }
+
+    @ExceptionHandler(KafkaProcessingException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String handleKafkaProcessingException(KafkaProcessingException ex) {
+        return ex.getMessage();
     }
 }

@@ -4,11 +4,14 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import wit.books_store.dto.OrderDto;
+import wit.books_store.kafka.OrderProducer;
 import wit.books_store.services.OrderService;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -16,6 +19,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderProducer orderProducer;
 
     @GetMapping("/all")
     public List<OrderDto> getAll(@PositiveOrZero @RequestParam (defaultValue = "0") int from,
@@ -30,7 +34,10 @@ public class OrderController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public void createBook(@RequestBody OrderDto orderDto) {
-        orderService.create(orderDto);
+    public CompletableFuture<ResponseEntity<?>> createOrder(@RequestBody OrderDto orderDto) {
+        return orderProducer.sendOrder(orderDto)
+                .thenApply(result -> ResponseEntity.status(
+                        result.isSuccess() ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST)
+                        .body(result));
     }
 }
