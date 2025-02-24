@@ -7,11 +7,9 @@ import lombok.experimental.FieldDefaults;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderDto {
     long order_id;
