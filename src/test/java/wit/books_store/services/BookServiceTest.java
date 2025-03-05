@@ -1,20 +1,21 @@
-package wit.books_store;
+package wit.books_store.services;
+
+import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import wit.books_store.dto.BookDto;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Book;
 import wit.books_store.repository.BookRepository;
-import wit.books_store.services.BookService;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class BookServiceTest {
+class BookServiceTest {
 
     @Mock
     private BookRepository repository;
@@ -36,15 +37,29 @@ public class BookServiceTest {
 
     @BeforeEach
     void createBooks() {
-        book0 = new Book(0L, "A rabbit", "J. Dan", 579, true);
-        book1 = new Book(1L, "Harry Potter", "J.K. Rowling", 1599, false);
+        book0 =  Book.builder()
+                .book_id(0L)
+                .title("A rabbit")
+                .author("J. Dan")
+                .price(579)
+                .isPresent(true)
+                .build();
+
+        book1 =  Book.builder()
+                .book_id(1L)
+                .title("Harry Potter")
+                .author("J.K. Rowling")
+                .price(1599)
+                .isPresent(false)
+                .build();
+
     }
 
 
     @Test
     void shouldReturnBookIfExists() {
         when(repository.findById(1L)).thenReturn(Optional.of(book0));
-        BookDto foundBook = service.getById(1L);
+        Book foundBook = service.getById(1L);
         assertEquals("A rabbit", foundBook.getTitle());
         verify(repository).findById(1L);
     }
@@ -67,16 +82,17 @@ public class BookServiceTest {
 
     @Test
     void shouldReturnBooksByDate() {
-        OffsetDateTime startDate = OffsetDateTime.parse("2025-02-28T00:00:00+03:00");
+        LocalDate date = LocalDate.now();
+        OffsetDateTime startDate = date.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
         OffsetDateTime endDay = startDate.plusDays(1).minusNanos(1);
         when(repository.findBooksByDate(startDate, endDay)).thenReturn(List.of(book0, book1));
-        service.findBooksByDate(startDate, endDay);
+        service.findBooksByDate(date);
         verify(repository).findBooksByDate(startDate, endDay);
     }
 
     @Test
     void shouldCreateBook() {
-        service.create(Mapper.toBookDto(book0));
+        service.create(book0);
         verify(repository).save(book0);
     }
 }

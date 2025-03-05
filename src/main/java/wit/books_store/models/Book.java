@@ -1,19 +1,17 @@
 package wit.books_store.models;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.springframework.data.relational.core.mapping.Table;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
 
+@Builder
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "BOOKS")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode
 public class Book {
-    long book_id;
-    String title;
-    String author;
-    int price;
-    boolean isPresent;
+    private long book_id;
+    private String title;
+    private String author;
+    private int price;
+    private boolean isPresent;
 }

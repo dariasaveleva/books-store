@@ -20,13 +20,13 @@ public class CustomerRepository {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     private final RowMapper<Customer> customerMapper = (rs, rowNum) ->
-            new Customer(
-                    rs.getLong("customer_id"),
-                    rs.getString("name"),
-                    rs.getString("surname"),
-                    rs.getString("email"),
-                    rs.getString("phone")
-            );
+            Customer.builder()
+                    .customer_id(rs.getLong("customer_id"))
+                    .name(rs.getString("name"))
+                    .surname(rs.getString("surname"))
+                    .email(rs.getString("email"))
+                    .phone(rs.getString("phone"))
+                    .build();
 
     public List<Customer> findAll(Pageable pageable) {
         String sql = "SELECT * from customers LIMIT :limit OFFSET :offset";

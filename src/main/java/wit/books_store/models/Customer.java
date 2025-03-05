@@ -1,19 +1,15 @@
 package wit.books_store.models;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.springframework.data.relational.core.mapping.Table;
+import lombok.Getter;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 
+@Builder
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "CUSTOMERS")
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode
 public class Customer {
-    long customer_id;
-    String name;
-    String surname;
-    String email;
-    String phone;
+    private long customer_id;
+    private String name;
+    private String surname;
+    private String email;
+    private String phone;
 }

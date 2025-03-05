@@ -1,4 +1,4 @@
-package wit.books_store;
+package wit.books_store.services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import wit.books_store.dto.OrderDto;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.exceptions.ValidationException;
 import wit.books_store.models.Book;
@@ -19,7 +18,6 @@ import wit.books_store.models.Order;
 import wit.books_store.repository.BookRepository;
 import wit.books_store.repository.CustomerRepository;
 import wit.books_store.repository.OrderRepository;
-import wit.books_store.services.OrderService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -29,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class OrderServiceTest {
+class OrderServiceTest {
 
     @Mock
     private OrderRepository repository;
@@ -57,17 +55,62 @@ public class OrderServiceTest {
 
     @BeforeEach
     void createOrder() {
-        book0 = new Book(0L, "A rabbit", "J. Dan", 579, true);
-        book1 = new Book(1L, "Harry Potter", "J.K. Rowling", 1599, false);
-        book2 = new Book(2L, "Inside", "D. Humphrey", 3999, true);
+        book0 =  Book.builder()
+                .book_id(0L)
+                .title("A rabbit")
+                .author("J. Dan")
+                .price(579)
+                .isPresent(true)
+                .build();
 
-        customer0 = new Customer(0L, "Stella", "Greak", "stellaG@mail.com", "89173543674");
-        customer1 = new Customer(1L, "Lessi", "Toprok", "lessi@mail.com", "89123643489");
+        book1 =  Book.builder()
+                .book_id(1L)
+                .title("Harry Potter")
+                .author("J.K. Rowling")
+                .price(1599)
+                .isPresent(false)
+                .build();
+        book2 =  Book.builder()
+                .book_id(2L)
+                .title("Inside")
+                .author("D. Humphrey")
+                .price(3999)
+                .isPresent(true)
+                .build();
 
-        order0 = new Order(0L, List.of(book0.getBook_id(), book1.getBook_id()), customer0.getCustomer_id(),
-                OffsetDateTime.parse("2025-02-28T18:24:45+03:00"), (double) book1.getPrice() + book0.getPrice());
-        order1 = new Order(1L, List.of(book0.getBook_id(), book2.getBook_id()), customer1.getCustomer_id(),
-                OffsetDateTime.parse("2025-02-04T20:00:00+03:00"), (double) book0.getPrice() + book2.getPrice());
+
+        customer0 = Customer.builder()
+                .customer_id(0L)
+                .name("Stella")
+                .surname("Greak")
+                .email("stellaG@mail.com")
+                .phone("89173543674")
+                .build();
+
+        customer1 = Customer.builder()
+                .customer_id(1L)
+                .name("Lessi")
+                .surname("Toprok")
+                .email("lessi@mail.com")
+                .phone("89123643489")
+                .build();
+
+
+        order0 = Order.builder()
+                .order_id(0L)
+                .books(List.of(book0.getBook_id(), book1.getBook_id()))
+                .customerId(customer0.getCustomer_id())
+                .createdDate(OffsetDateTime.parse("2025-02-28T18:24:45+03:00"))
+                .sum((double) book1.getPrice() + book0.getPrice())
+                .build();
+
+        order1 = Order.builder()
+                .order_id(1L)
+                .books(List.of(book0.getBook_id(), book2.getBook_id()))
+                .customerId(customer1.getCustomer_id())
+                .createdDate(OffsetDateTime.parse("2025-02-04T20:00:00+03:00"))
+                .sum((double) book0.getPrice() + book2.getPrice())
+                .build();
 
         order2 = Order.builder()
                 .books(List.of(book0.getBook_id(), book2.getBook_id()))
@@ -79,7 +122,7 @@ public class OrderServiceTest {
     @Test
     void shouldReturnOrderIfExists() {
         when(repository.findById(1L)).thenReturn(Optional.of(order1));
-        OrderDto foundOrder = service.getById(1L);
+        Order foundOrder = service.getById(1L);
         assertEquals(4578.0, foundOrder.getSum());
         assertEquals(1L, foundOrder.getCustomerId());
         verify(repository).findById(1L);
@@ -101,7 +144,7 @@ public class OrderServiceTest {
         verify(repository).findAll(pageable);
     }
 
-   @Test
+    @Test
     void shouldCountSum() {
         when(bookRepository.findBooksByIds(order0.getBooks())).thenReturn(List.of(book0, book1));
         assertEquals(order0.getSum(), service.countSum(order0.getBooks()));
@@ -111,7 +154,7 @@ public class OrderServiceTest {
     void shouldCreateOrder() {
         when(customerRepository.findById(customer1.getCustomer_id())).thenReturn(Optional.of(customer1));
         when(bookRepository.findBooksByIds(List.of(book0.getBook_id(), book2.getBook_id()))).thenReturn(List.of(book0, book2));
-        service.create(Mapper.toOrderDto(order2));
+        service.create(order2);
         verify(repository).save(orderCaptor.capture());
         Order savedOrder = orderCaptor.getValue();
         assertEquals(savedOrder.getCustomerId(), order2.getCustomerId());
@@ -120,6 +163,6 @@ public class OrderServiceTest {
 
     @Test
     void shouldReturnErrorIfOrderIsNotValid() {
-        assertThrows(ValidationException.class, () -> service.create(Mapper.toOrderDto(order2)));
+        assertThrows(ValidationException.class, () -> service.create(order2));
     }
 }

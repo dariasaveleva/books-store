@@ -1,8 +1,9 @@
 package wit.books_store.models;
 
-import lombok.*;
-import lombok.experimental.FieldDefaults;
-import org.springframework.data.relational.core.mapping.Table;
+import lombok.Getter;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -10,15 +11,11 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@Table(name = "ORDERS")
 @EqualsAndHashCode
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Order {
-    long order_id;
-    List<Long> books;
-    long customerId;
-    OffsetDateTime createdDate;
-    Double sum;
+    private long order_id;
+    private List<Long> books;
+    private long customerId;
+    private OffsetDateTime createdDate;
+    private Double sum;
 }

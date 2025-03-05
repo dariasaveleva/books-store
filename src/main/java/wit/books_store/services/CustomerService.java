@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import wit.books_store.Mapper;
-import wit.books_store.dto.CustomerDto;
 import wit.books_store.exceptions.DuplicationException;
 import wit.books_store.exceptions.NotFoundException;
 import wit.books_store.models.Customer;
@@ -23,21 +21,21 @@ public class CustomerService {
     private final CustomerRepository repository;
     private final OrderRepository orderRepository;
 
-    public List<CustomerDto> findAll(Pageable pageable) {
+    public List<Customer> findAll(Pageable pageable) {
         log.info("show all customers");
-        return repository.findAll(pageable).stream().map(Mapper::toCustomerDto).toList();
+        return repository.findAll(pageable);
     }
 
-    public CustomerDto getById(long id) {
+    public Customer getById(long id) {
         Customer customer = repository.findById(id).orElseThrow(() -> new NotFoundException("customer not found"));
         log.info("found the customer with id {}", id);
-        return Mapper.toCustomerDto(customer);
+        return customer;
     }
 
-    public CustomerDto getByEmailOrPhone(String email, String phone) {
+    public Customer getByEmailOrPhone(String email, String phone) {
         Optional <Customer> customer = repository.findByEmailOrPhone(email, phone);
         log.info(customer.isPresent() ? "customer found" : "customer already exists with email {} or phone {}", email, phone);
-        return customer.map(Mapper::toCustomerDto).orElse(null);
+        return customer.orElse(null);
     }
 
     public List<Order> getOrdersByCustomer(long id) {
@@ -46,9 +44,8 @@ public class CustomerService {
         return orders;
     }
 
-    public void create(CustomerDto customerDto) {
-        if (checkIfCustomerNew(customerDto.getEmail(), customerDto.getPhone())) {
-            Customer customer = Mapper.toCustomer(customerDto);
+    public void create(Customer customer) {
+        if (checkIfCustomerNew(customer.getEmail(), customer.getPhone())) {
             repository.save(customer);
             log.info("new customer was registered");
         } else {
